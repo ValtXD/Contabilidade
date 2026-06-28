@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contabilidade Cloud - Impressão 3D</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; display: flex; flex-wrap: wrap; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1 1 300px; }
+        .tabelas-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1 1 100%; margin-top: 20px; }
+        h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; font-size: 1.2rem; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #3498db; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-size: 15px; width: 100%; font-weight: bold; transition: 0.3s; }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        
+        .resumo { background-color: #2c3e50; color: white; }
+        .resumo h2 { border-bottom-color: #ecf0f1; color: white; }
+        .resumo-item { display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #455a64; }
+        .resumo-item:last-child { border-bottom: none; font-weight: bold; font-size: 18px; color: #2ecc71; }
+        
+        .btn-danger { background-color: #e74c3c; margin-top: 15px; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-excluir { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; width: auto; border-radius: 4px; }
+        .btn-excluir:hover { background-color: #c0392b; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #2c3e50; }
+        tr:hover { background-color: #f1f2f6; }
+        .titulo-tabela { background-color: #3498db; color: white; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-bottom: 10px; font-size: 1rem; }
+        .titulo-perdas { background-color: #e67e22; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <h2>📦 Registrar Compra de Insumo</h2>
+            <div class="form-group">
+                <label>Insumo (ex: Filamento PLA)</label>
+                <input type="text" id="insumoDesc" placeholder="Descrição do material">
+            </div>
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>Quantidade</label>
+                    <input type="number" id="insumoQtd" value="1" min="1">
+                </div>
+                <div style="flex: 1;">
+                    <label>Custo Total (R$)</label>
+                    <input type="number" id="insumoCusto" step="0.01" placeholder="Ex: 140.00">
+                </div>
+            </div>
+            <button id="btnAdicionarCompra" onclick="adicionarCompra()">Adicionar Compra</button>
+        </div>
+
+        <div class="card">
+            <h2>💰 Registrar Venda</h2>
+            <div class="form-group">
+                <label>Peça Impressa / Serviço</label>
+                <input type="text" id="vendaDesc" placeholder="Descrição da peça">
+            </div>
+            <div class="form-group" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>Quantidade</label>
+                    <input type="number" id="vendaQtd" value="1" min="1">
+                </div>
+                <div style="flex: 1;">
+                    <label>Preço Un. (R$)</label>
+                    <input type="number" id="vendaPreco" step="0.01" placeholder="Ex: 120.00">
+                </div>
+            </div>
+            <button id="btnAdicionarVenda" onclick="adicionarVenda()">Adicionar Venda</button>
+        </div>
+
+        <div class="card" style="border: 2px solid #e67e22;">
+            <h2 style="color: #e67e22; border-bottom-color: #e67e22;">⚠️ Registrar Perda/Falha</h2>
+            <div class="form-group">
+                <label>Motivo (ex: Falha de adesão, Suportes)</label>
+                <input type="text" id="perdaDesc" placeholder="Descrição do erro">
+            </div>
+            <div class="form-group">
+                <label>Custo Perdido (R$)</label>
+                <input type="number" id="perdaCusto" step="0.01" placeholder="Ex: 5.50">
+            </div>
+            <button id="btnAdicionarPerda" style="background-color: #e67e22;" onclick="adicionarPerda()">Adicionar Perda</button>
+        </div>
+
+        <div class="card resumo">
+            <h2>📊 Resumo Financeiro (Nuvem)</h2>
+            <div class="resumo-item">
+                <span>Faturamento Total:</span>
+                <span id="resFaturamento">Carregando...</span>
+            </div>
+            <div class="resumo-item">
+                <span>Custos (Compras):</span>
+                <span id="resCustos">Carregando...</span>
+            </div>
+            <div class="resumo-item" style="color: #e74c3c;">
+                <span>Desperdício (Perdas):</span>
+                <span id="resDesperdicio">Carregando...</span>
+            </div>
+            <div class="resumo-item">
+                <span>Lucro Líquido:</span>
+                <span id="resLucro">Carregando...</span>
+            </div>
+            <div class="resumo-item" style="color: #f1c40f;">
+                <span>Margem de Lucro:</span>
+                <span id="resMargem">- %</span>
+            </div>
+            
+            <button class="btn-danger" onclick="limparDados()">Apagar Todos os Dados da Nuvem</button>
+        </div>
+
+        <div class="tabelas-container">
+            <h2 style="border: none;">📑 Histórico de Lançamentos</h2>
+            
+            <span class="titulo-tabela">Histórico de Compras</span>
+            <table>
+                <thead>
+                    <tr><th>Data</th><th>Descrição</th><th>Qtd</th><th>Custo Total</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="tabelaCompras"></tbody>
+            </table>
+
+            <span class="titulo-tabela">Histórico de Vendas</span>
+            <table>
+                <thead>
+                    <tr><th>Data</th><th>Descrição</th><th>Qtd</th><th>Preço Unitário</th><th>Faturamento</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="tabelaVendas"></tbody>
+            </table>
+
+            <span class="titulo-tabela titulo-perdas">Histórico de Perdas</span>
+            <table>
+                <thead>
+                    <tr><th>Data</th><th>Motivo da Falha</th><th>Custo Perdido</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="tabelaPerdas"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Sua configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNYLgSiFRJGgMe9l0HRMcPAsndPuuSWAk",
+            authDomain: "contabilidade-3d.firebaseapp.com",
+            projectId: "contabilidade-3d",
+            storageBucket: "contabilidade-3d.firebasestorage.app",
+            messagingSenderId: "926261439048",
+            appId: "1:926261439048:web:5df26b0f0f944a286a067d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let compras = [];
+        let vendas = [];
+        let perdas = [];
+
+        // Lógica de data atual
+        function obterDataAtual() {
+            return new Date().toLocaleDateString('pt-BR');
+        }
+
+        // --- SISTEMA EM TEMPO REAL ---
+        onSnapshot(collection(db, "compras"), (snapshot) => {
+            compras = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            atualizarTela();
+        });
+
+        onSnapshot(collection(db, "vendas"), (snapshot) => {
+            vendas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            atualizarTela();
+        });
+
+        onSnapshot(collection(db, "perdas"), (snapshot) => {
+            perdas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            atualizarTela();
+        });
+
+        // --- FUNÇÕES DE ADIÇÃO ---
+        window.adicionarCompra = async function() {
+            const desc = document.getElementById('insumoDesc').value;
+            const qtd = parseInt(document.getElementById('insumoQtd').value);
+            const custo = parseFloat(document.getElementById('insumoCusto').value);
+            const dataRegisto = obterDataAtual();
+            
+            if(desc && qtd && custo) {
+                document.getElementById('btnAdicionarCompra').disabled = true;
+                await addDoc(collection(db, "compras"), { data: dataRegisto, descricao: desc, quantidade: qtd, custoTotal: custo });
+                
+                document.getElementById('insumoDesc').value = '';
+                document.getElementById('insumoQtd').value = '1';
+                document.getElementById('insumoCusto').value = '';
+                document.getElementById('btnAdicionarCompra').disabled = false;
+            }
+        }
+
+        window.adicionarVenda = async function() {
+            const desc = document.getElementById('vendaDesc').value;
+            const qtd = parseInt(document.getElementById('vendaQtd').value);
+            const preco = parseFloat(document.getElementById('vendaPreco').value);
+            const dataRegisto = obterDataAtual();
+            
+            if(desc && qtd && preco) {
+                document.getElementById('btnAdicionarVenda').disabled = true;
+                await addDoc(collection(db, "vendas"), { 
+                    data: dataRegisto,
+                    descricao: desc, 
+                    quantidade: qtd, 
+                    precoUnitario: preco, 
+                    faturamentoTotal: qtd * preco 
+                });
+                
+                document.getElementById('vendaDesc').value = '';
+                document.getElementById('vendaQtd').value = '1';
+                document.getElementById('vendaPreco').value = '';
+                document.getElementById('btnAdicionarVenda').disabled = false;
+            }
+        }
+
+        window.adicionarPerda = async function() {
+            const desc = document.getElementById('perdaDesc').value;
+            const custo = parseFloat(document.getElementById('perdaCusto').value);
+            const dataRegisto = obterDataAtual();
+            
+            if(desc && custo) {
+                document.getElementById('btnAdicionarPerda').disabled = true;
+                await addDoc(collection(db, "perdas"), { data: dataRegisto, descricao: desc, custoPerda: custo });
+                
+                document.getElementById('perdaDesc').value = '';
+                document.getElementById('perdaCusto').value = '';
+                document.getElementById('btnAdicionarPerda').disabled = false;
+            }
+        }
+
+        // --- FUNÇÕES DE EXCLUSÃO ---
+        window.removerCompra = async function(id) {
+            if(confirm("Deseja apagar esta compra da nuvem?")) await deleteDoc(doc(db, "compras", id));
+        }
+
+        window.removerVenda = async function(id) {
+            if(confirm("Deseja apagar esta venda da nuvem?")) await deleteDoc(doc(db, "vendas", id));
+        }
+
+        window.removerPerda = async function(id) {
+            if(confirm("Deseja apagar esta perda da nuvem?")) await deleteDoc(doc(db, "perdas", id));
+        }
+
+        window.limparDados = async function() {
+            if(confirm("ATENÇÃO: Deseja apagar TODOS os registros do banco de dados? Esta ação é irreversível.")) {
+                compras.forEach(async (c) => await deleteDoc(doc(db, "compras", c.id)));
+                vendas.forEach(async (v) => await deleteDoc(doc(db, "vendas", v.id)));
+                perdas.forEach(async (p) => await deleteDoc(doc(db, "perdas", p.id)));
+            }
+        }
+
+        // --- ATUALIZAÇÃO DA TELA E CÁLCULOS ---
+        function atualizarTela() {
+            const custosTotais = compras.reduce((acc, curr) => acc + (curr.custoTotal || 0), 0);
+            const faturamentoTotal = vendas.reduce((acc, curr) => acc + (curr.faturamentoTotal || 0), 0);
+            const desperdicioTotal = perdas.reduce((acc, curr) => acc + (curr.custoPerda || 0), 0);
+            const lucro = faturamentoTotal - custosTotais;
+            
+            let margem = 0;
+            if (faturamentoTotal > 0) {
+                margem = (lucro / faturamentoTotal) * 100;
+            }
+
+            // Atualiza Resumo
+            document.getElementById('resFaturamento').innerText = 'R$ ' + faturamentoTotal.toFixed(2);
+            document.getElementById('resCustos').innerText = 'R$ ' + custosTotais.toFixed(2);
+            document.getElementById('resDesperdicio').innerText = 'R$ ' + desperdicioTotal.toFixed(2);
+            document.getElementById('resLucro').innerText = 'R$ ' + lucro.toFixed(2);
+            document.getElementById('resMargem').innerText = margem.toFixed(2) + ' %';
+
+            // Renderiza Tabelas 
+            const tbodyCompras = document.getElementById('tabelaCompras');
+            tbodyCompras.innerHTML = '';
+            compras.forEach(c => {
+                tbodyCompras.innerHTML += `<tr>
+                    <td>${c.data || '-'}</td>
+                    <td>${c.descricao}</td><td>${c.quantidade}</td><td>R$ ${c.custoTotal.toFixed(2)}</td>
+                    <td><button class="btn-excluir" onclick="removerCompra('${c.id}')">Excluir</button></td>
+                </tr>`;
+            });
+
+            const tbodyVendas = document.getElementById('tabelaVendas');
+            tbodyVendas.innerHTML = '';
+            vendas.forEach(v => {
+                tbodyVendas.innerHTML += `<tr>
+                    <td>${v.data || '-'}</td>
+                    <td>${v.descricao}</td><td>${v.quantidade}</td>
+                    <td>R$ ${v.precoUnitario.toFixed(2)}</td><td>R$ ${v.faturamentoTotal.toFixed(2)}</td>
+                    <td><button class="btn-excluir" onclick="removerVenda('${v.id}')">Excluir</button></td>
+                </tr>`;
+            });
+
+            const tbodyPerdas = document.getElementById('tabelaPerdas');
+            tbodyPerdas.innerHTML = '';
+            perdas.forEach(p => {
+                tbodyPerdas.innerHTML += `<tr>
+                    <td>${p.data || '-'}</td>
+                    <td>${p.descricao}</td><td>R$ ${p.custoPerda.toFixed(2)}</td>
+                    <td><button class="btn-excluir" onclick="removerPerda('${p.id}')">Excluir</button></td>
+                </tr>`;
+            });
+        }
+    </script>
+</body>
+</html>
