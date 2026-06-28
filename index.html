@@ -5,14 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contabilidade Cloud - Impressão 3D</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; display: flex; flex-wrap: wrap; gap: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; }
+        
+        /* Barra de Navegação */
+        .navbar { background-color: #2c3e50; padding: 10px 20px; display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        .tab-btn { background-color: transparent; color: white; border: none; border-bottom: 3px solid transparent; padding: 10px 20px; font-size: 16px; border-radius: 0; cursor: pointer; transition: 0.3s; width: auto; font-weight: normal; }
+        .tab-btn:hover { background-color: #34495e; border-radius: 4px 4px 0 0; }
+        .tab-btn.active { border-bottom: 3px solid #3498db; font-weight: bold; }
+
+        .container { max-width: 1200px; margin: auto; display: flex; flex-wrap: wrap; gap: 20px; padding: 0 20px 20px 20px; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1 1 300px; }
         .tabelas-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex: 1 1 100%; margin-top: 20px; }
         h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; font-size: 1.2rem; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9rem; }
-        input[type="text"], input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="text"], input[type="number"], textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
         button { background-color: #3498db; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; font-size: 15px; width: 100%; font-weight: bold; transition: 0.3s; }
         button:hover { background-color: #2980b9; }
         button:disabled { background-color: #95a5a6; cursor: not-allowed; }
@@ -33,12 +40,34 @@
         tr:hover { background-color: #f1f2f6; }
         .titulo-tabela { background-color: #3498db; color: white; padding: 5px 10px; border-radius: 4px; display: inline-block; margin-bottom: 10px; font-size: 1rem; }
         .titulo-perdas { background-color: #e67e22; }
+
+        .nota-card { background: #f8f9fa; padding: 15px; border-left: 5px solid #3498db; margin-bottom: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        /* Estilos específicos para a Impressão PDF */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; margin: 0; padding: 0; }
+            .container { gap: 10px; padding: 0; }
+            .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; padding: 15px; }
+            .tabelas-container { box-shadow: none; padding: 0; }
+            .resumo { background-color: white !important; color: black !important; border: 2px solid #2c3e50; }
+            .resumo h2, .resumo-item { color: black !important; border-bottom-color: #ddd; }
+            table, th, td { border-color: #bbb; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="card">
+    <!-- Menu Superior -->
+    <nav class="navbar no-print">
+        <button id="tabContabilidade" class="tab-btn active" onclick="mudarAba('contabilidade')">📊 Contabilidade</button>
+        <button id="tabAnotacoes" class="tab-btn" onclick="mudarAba('anotacoes')">📝 Anotações & Ideias</button>
+    </nav>
+
+    <!-- TELA 1: CONTABILIDADE -->
+    <div id="telaContabilidade" class="container">
+        <!-- Áreas de Input (Não saem na impressão) -->
+        <div class="card no-print">
             <h2>📦 Registrar Compra de Insumo</h2>
             <div class="form-group">
                 <label>Insumo (ex: Filamento PLA)</label>
@@ -57,7 +86,7 @@
             <button id="btnAdicionarCompra" onclick="adicionarCompra()">Adicionar Compra</button>
         </div>
 
-        <div class="card">
+        <div class="card no-print">
             <h2>💰 Registrar Venda</h2>
             <div class="form-group">
                 <label>Peça Impressa / Serviço</label>
@@ -76,7 +105,7 @@
             <button id="btnAdicionarVenda" onclick="adicionarVenda()">Adicionar Venda</button>
         </div>
 
-        <div class="card" style="border: 2px solid #e67e22;">
+        <div class="card no-print" style="border: 2px solid #e67e22;">
             <h2 style="color: #e67e22; border-bottom-color: #e67e22;">⚠️ Registrar Perda/Falha</h2>
             <div class="form-group">
                 <label>Motivo (ex: Falha de adesão, Suportes)</label>
@@ -89,6 +118,7 @@
             <button id="btnAdicionarPerda" style="background-color: #e67e22;" onclick="adicionarPerda()">Adicionar Perda</button>
         </div>
 
+        <!-- Resumo -->
         <div class="card resumo">
             <h2>📊 Resumo Financeiro (Nuvem)</h2>
             <div class="resumo-item">
@@ -112,16 +142,17 @@
                 <span id="resMargem">- %</span>
             </div>
             
-            <button class="btn-danger" onclick="limparDados()">Apagar Todos os Dados da Nuvem</button>
+            <button class="btn-danger no-print" onclick="limparDados()">Apagar Todos os Dados da Nuvem</button>
         </div>
 
+        <!-- Tabelas -->
         <div class="tabelas-container">
             <h2 style="border: none;">📑 Histórico de Lançamentos</h2>
             
             <span class="titulo-tabela">Histórico de Compras</span>
             <table>
                 <thead>
-                    <tr><th>Data</th><th>Descrição</th><th>Qtd</th><th>Custo Total</th><th>Ações</th></tr>
+                    <tr><th>Data</th><th>Descrição</th><th>Qtd</th><th>Custo Total</th><th class="no-print">Ações</th></tr>
                 </thead>
                 <tbody id="tabelaCompras"></tbody>
             </table>
@@ -129,7 +160,7 @@
             <span class="titulo-tabela">Histórico de Vendas</span>
             <table>
                 <thead>
-                    <tr><th>Data</th><th>Descrição</th><th>Qtd</th><th>Preço Unitário</th><th>Faturamento</th><th>Ações</th></tr>
+                    <tr><th>Data</th><th>Descrição</th><th>Qtd</th><th>Preço Unitário</th><th>Faturamento</th><th class="no-print">Ações</th></tr>
                 </thead>
                 <tbody id="tabelaVendas"></tbody>
             </table>
@@ -137,18 +168,41 @@
             <span class="titulo-tabela titulo-perdas">Histórico de Perdas</span>
             <table>
                 <thead>
-                    <tr><th>Data</th><th>Motivo da Falha</th><th>Custo Perdido</th><th>Ações</th></tr>
+                    <tr><th>Data</th><th>Motivo da Falha</th><th>Custo Perdido</th><th class="no-print">Ações</th></tr>
                 </thead>
                 <tbody id="tabelaPerdas"></tbody>
             </table>
         </div>
+        
+        <!-- Botão de Imprimir -->
+        <div class="no-print" style="width: 100%; display: flex; justify-content: center; margin-top: 20px;">
+            <button onclick="window.print()" style="background-color: #27ae60; max-width: 300px; padding: 15px; font-size: 18px;">🖨️ Salvar como PDF / Imprimir</button>
+        </div>
     </div>
 
+    <!-- TELA 2: ANOTAÇÕES (Escondida por padrão) -->
+    <div id="telaAnotacoes" class="container" style="display: none;">
+        <div class="card no-print" style="flex: 1 1 100%;">
+            <h2>📝 Adicionar Nova Anotação</h2>
+            <div class="form-group">
+                <textarea id="textoAnotacao" rows="4" placeholder="Escreva a sua ideia, lembrete ou recado para a equipa..." style="resize: vertical;"></textarea>
+            </div>
+            <button id="btnAdicionarAnotacao" onclick="adicionarAnotacao()">Salvar Anotação na Nuvem</button>
+        </div>
+
+        <div class="tabelas-container" style="flex: 1 1 100%;">
+            <h2 style="border: none;">📌 Mural da Equipa</h2>
+            <div id="listaAnotacoes">
+                <!-- Anotações geradas via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Sua configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCNYLgSiFRJGgMe9l0HRMcPAsndPuuSWAk",
             authDomain: "contabilidade-3d.firebaseapp.com",
@@ -164,13 +218,28 @@
         let compras = [];
         let vendas = [];
         let perdas = [];
+        let anotacoes = [];
 
-        // Lógica de data atual
         function obterDataAtual() {
-            return new Date().toLocaleDateString('pt-BR');
+            return new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         }
 
-        // --- SISTEMA EM TEMPO REAL ---
+        // --- SISTEMA DE ABAS ---
+        window.mudarAba = function(aba) {
+            if(aba === 'contabilidade') {
+                document.getElementById('telaContabilidade').style.display = 'flex';
+                document.getElementById('telaAnotacoes').style.display = 'none';
+                document.getElementById('tabContabilidade').classList.add('active');
+                document.getElementById('tabAnotacoes').classList.remove('active');
+            } else {
+                document.getElementById('telaContabilidade').style.display = 'none';
+                document.getElementById('telaAnotacoes').style.display = 'flex';
+                document.getElementById('tabContabilidade').classList.remove('active');
+                document.getElementById('tabAnotacoes').classList.add('active');
+            }
+        }
+
+        // --- LISTENERS FIREBASE ---
         onSnapshot(collection(db, "compras"), (snapshot) => {
             compras = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             atualizarTela();
@@ -186,20 +255,23 @@
             atualizarTela();
         });
 
-        // --- FUNÇÕES DE ADIÇÃO ---
+        onSnapshot(collection(db, "anotacoes"), (snapshot) => {
+            anotacoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Ordenar da mais recente para a mais antiga localmente (para simplificar sem criar índices)
+            anotacoes.sort((a, b) => b.timestamp - a.timestamp);
+            atualizarAnotacoes();
+        });
+
+        // --- FUNÇÕES DE ADIÇÃO CONTABILIDADE ---
         window.adicionarCompra = async function() {
             const desc = document.getElementById('insumoDesc').value;
             const qtd = parseInt(document.getElementById('insumoQtd').value);
             const custo = parseFloat(document.getElementById('insumoCusto').value);
-            const dataRegisto = obterDataAtual();
             
             if(desc && qtd && custo) {
                 document.getElementById('btnAdicionarCompra').disabled = true;
-                await addDoc(collection(db, "compras"), { data: dataRegisto, descricao: desc, quantidade: qtd, custoTotal: custo });
-                
-                document.getElementById('insumoDesc').value = '';
-                document.getElementById('insumoQtd').value = '1';
-                document.getElementById('insumoCusto').value = '';
+                await addDoc(collection(db, "compras"), { data: obterDataAtual().split(' ')[0], descricao: desc, quantidade: qtd, custoTotal: custo });
+                document.getElementById('insumoDesc').value = ''; document.getElementById('insumoCusto').value = '';
                 document.getElementById('btnAdicionarCompra').disabled = false;
             }
         }
@@ -208,21 +280,11 @@
             const desc = document.getElementById('vendaDesc').value;
             const qtd = parseInt(document.getElementById('vendaQtd').value);
             const preco = parseFloat(document.getElementById('vendaPreco').value);
-            const dataRegisto = obterDataAtual();
             
             if(desc && qtd && preco) {
                 document.getElementById('btnAdicionarVenda').disabled = true;
-                await addDoc(collection(db, "vendas"), { 
-                    data: dataRegisto,
-                    descricao: desc, 
-                    quantidade: qtd, 
-                    precoUnitario: preco, 
-                    faturamentoTotal: qtd * preco 
-                });
-                
-                document.getElementById('vendaDesc').value = '';
-                document.getElementById('vendaQtd').value = '1';
-                document.getElementById('vendaPreco').value = '';
+                await addDoc(collection(db, "vendas"), { data: obterDataAtual().split(' ')[0], descricao: desc, quantidade: qtd, precoUnitario: preco, faturamentoTotal: qtd * preco });
+                document.getElementById('vendaDesc').value = ''; document.getElementById('vendaPreco').value = '';
                 document.getElementById('btnAdicionarVenda').disabled = false;
             }
         }
@@ -230,40 +292,67 @@
         window.adicionarPerda = async function() {
             const desc = document.getElementById('perdaDesc').value;
             const custo = parseFloat(document.getElementById('perdaCusto').value);
-            const dataRegisto = obterDataAtual();
             
             if(desc && custo) {
                 document.getElementById('btnAdicionarPerda').disabled = true;
-                await addDoc(collection(db, "perdas"), { data: dataRegisto, descricao: desc, custoPerda: custo });
-                
-                document.getElementById('perdaDesc').value = '';
-                document.getElementById('perdaCusto').value = '';
+                await addDoc(collection(db, "perdas"), { data: obterDataAtual().split(' ')[0], descricao: desc, custoPerda: custo });
+                document.getElementById('perdaDesc').value = ''; document.getElementById('perdaCusto').value = '';
                 document.getElementById('btnAdicionarPerda').disabled = false;
             }
         }
 
-        // --- FUNÇÕES DE EXCLUSÃO ---
-        window.removerCompra = async function(id) {
-            if(confirm("Deseja apagar esta compra da nuvem?")) await deleteDoc(doc(db, "compras", id));
+        // --- FUNÇÕES DE ANOTAÇÕES ---
+        window.adicionarAnotacao = async function() {
+            const texto = document.getElementById('textoAnotacao').value;
+            if(texto.trim() !== '') {
+                document.getElementById('btnAdicionarAnotacao').disabled = true;
+                await addDoc(collection(db, "anotacoes"), { 
+                    texto: texto, 
+                    dataHora: obterDataAtual(),
+                    timestamp: Date.now() // Usado para ordenar
+                });
+                document.getElementById('textoAnotacao').value = '';
+                document.getElementById('btnAdicionarAnotacao').disabled = false;
+            }
         }
 
-        window.removerVenda = async function(id) {
-            if(confirm("Deseja apagar esta venda da nuvem?")) await deleteDoc(doc(db, "vendas", id));
+        window.removerAnotacao = async function(id) {
+            if(confirm("Deseja apagar esta anotação da nuvem?")) await deleteDoc(doc(db, "anotacoes", id));
         }
 
-        window.removerPerda = async function(id) {
-            if(confirm("Deseja apagar esta perda da nuvem?")) await deleteDoc(doc(db, "perdas", id));
-        }
-
+        // --- FUNÇÕES DE EXCLUSÃO CONTABILIDADE ---
+        window.removerCompra = async function(id) { if(confirm("Deseja apagar esta compra da nuvem?")) await deleteDoc(doc(db, "compras", id)); }
+        window.removerVenda = async function(id) { if(confirm("Deseja apagar esta venda da nuvem?")) await deleteDoc(doc(db, "vendas", id)); }
+        window.removerPerda = async function(id) { if(confirm("Deseja apagar esta perda da nuvem?")) await deleteDoc(doc(db, "perdas", id)); }
         window.limparDados = async function() {
-            if(confirm("ATENÇÃO: Deseja apagar TODOS os registros do banco de dados? Esta ação é irreversível.")) {
+            if(confirm("ATENÇÃO: Deseja apagar TODOS os registros?")) {
                 compras.forEach(async (c) => await deleteDoc(doc(db, "compras", c.id)));
                 vendas.forEach(async (v) => await deleteDoc(doc(db, "vendas", v.id)));
                 perdas.forEach(async (p) => await deleteDoc(doc(db, "perdas", p.id)));
             }
         }
 
-        // --- ATUALIZAÇÃO DA TELA E CÁLCULOS ---
+        // --- RENDERIZAÇÃO ---
+        function atualizarAnotacoes() {
+            const div = document.getElementById('listaAnotacoes');
+            div.innerHTML = '';
+            if(anotacoes.length === 0) {
+                div.innerHTML = '<p style="color: #7f8c8d; font-style: italic;">Nenhuma anotação registrada ainda.</p>';
+                return;
+            }
+            anotacoes.forEach(a => {
+                div.innerHTML += `
+                    <div class="nota-card">
+                        <p style="margin-top: 0; font-size: 16px; white-space: pre-wrap;">${a.texto}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
+                            <span style="font-size: 13px; color: #7f8c8d;">🕒 Registrado em: ${a.dataHora || '-'}</span>
+                            <button class="btn-excluir no-print" onclick="removerAnotacao('${a.id}')">Excluir</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         function atualizarTela() {
             const custosTotais = compras.reduce((acc, curr) => acc + (curr.custoTotal || 0), 0);
             const faturamentoTotal = vendas.reduce((acc, curr) => acc + (curr.faturamentoTotal || 0), 0);
@@ -275,21 +364,18 @@
                 margem = (lucro / faturamentoTotal) * 100;
             }
 
-            // Atualiza Resumo
             document.getElementById('resFaturamento').innerText = 'R$ ' + faturamentoTotal.toFixed(2);
             document.getElementById('resCustos').innerText = 'R$ ' + custosTotais.toFixed(2);
             document.getElementById('resDesperdicio').innerText = 'R$ ' + desperdicioTotal.toFixed(2);
             document.getElementById('resLucro').innerText = 'R$ ' + lucro.toFixed(2);
             document.getElementById('resMargem').innerText = margem.toFixed(2) + ' %';
 
-            // Renderiza Tabelas 
             const tbodyCompras = document.getElementById('tabelaCompras');
             tbodyCompras.innerHTML = '';
             compras.forEach(c => {
                 tbodyCompras.innerHTML += `<tr>
-                    <td>${c.data || '-'}</td>
-                    <td>${c.descricao}</td><td>${c.quantidade}</td><td>R$ ${c.custoTotal.toFixed(2)}</td>
-                    <td><button class="btn-excluir" onclick="removerCompra('${c.id}')">Excluir</button></td>
+                    <td>${c.data || '-'}</td><td>${c.descricao}</td><td>${c.quantidade}</td><td>R$ ${c.custoTotal.toFixed(2)}</td>
+                    <td class="no-print"><button class="btn-excluir" onclick="removerCompra('${c.id}')">Excluir</button></td>
                 </tr>`;
             });
 
@@ -297,10 +383,9 @@
             tbodyVendas.innerHTML = '';
             vendas.forEach(v => {
                 tbodyVendas.innerHTML += `<tr>
-                    <td>${v.data || '-'}</td>
-                    <td>${v.descricao}</td><td>${v.quantidade}</td>
+                    <td>${v.data || '-'}</td><td>${v.descricao}</td><td>${v.quantidade}</td>
                     <td>R$ ${v.precoUnitario.toFixed(2)}</td><td>R$ ${v.faturamentoTotal.toFixed(2)}</td>
-                    <td><button class="btn-excluir" onclick="removerVenda('${v.id}')">Excluir</button></td>
+                    <td class="no-print"><button class="btn-excluir" onclick="removerVenda('${v.id}')">Excluir</button></td>
                 </tr>`;
             });
 
@@ -308,9 +393,8 @@
             tbodyPerdas.innerHTML = '';
             perdas.forEach(p => {
                 tbodyPerdas.innerHTML += `<tr>
-                    <td>${p.data || '-'}</td>
-                    <td>${p.descricao}</td><td>R$ ${p.custoPerda.toFixed(2)}</td>
-                    <td><button class="btn-excluir" onclick="removerPerda('${p.id}')">Excluir</button></td>
+                    <td>${p.data || '-'}</td><td>${p.descricao}</td><td>R$ ${p.custoPerda.toFixed(2)}</td>
+                    <td class="no-print"><button class="btn-excluir" onclick="removerPerda('${p.id}')">Excluir</button></td>
                 </tr>`;
             });
         }
